@@ -23,6 +23,7 @@ There is no build step, no linter, and no test suite — changes are verified ma
 index.html          # Single entry point; loads src/app.js as ES module
 src/
   app.js            # All UI logic: state, model, rendering, event handlers (~2000 lines)
+  map.js            # Map view: lazy-loads Leaflet (unpkg) + CARTO tiles, draws price pins
   store.js          # Firebase init, Auth, Firestore real-time listeners, write fns
   config.js         # Firebase web config + reCAPTCHA Enterprise site key
   style.css         # Responsive CSS, light/dark mode via CSS custom properties
@@ -36,7 +37,7 @@ firebase.json       # Hosting config (serves repo root) + Firestore rules refere
 
 | Collection | Key fields | Who writes |
 |------------|------------|------------|
-| `venues/{id}` | `name, area, kind, beer, est: { eur, cl }, at` | Admins only |
+| `venues/{id}` | `name, area, kind, beer, est: { eur, cl }, loc: { lat, lng }, at` | Admins only |
 | `reports/{uid}` | `{ items: [...], venues: [...], updatedAt }` | Each user writes their own doc |
 | `mod/state` | `{ hiddenReports, hiddenUsers, hiddenVenues }` | Admins only |
 | `admins/{uid}` | `{ name? }` | Manual creation in Firestore console |

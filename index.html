@@ -29,14 +29,21 @@
       <button id="sCheap" aria-pressed="true">Cheapest</button><button id="sDear" aria-pressed="false">Priciest</button><button id="sNew" aria-pressed="false">Newest</button>
     </div>
     <button id="hhNow" aria-pressed="false">Happy hour now</button>
+    <div class="seg" role="group" aria-label="View">
+      <button id="vList" aria-pressed="true">List</button><button id="vMap" aria-pressed="false">Map</button>
+    </div>
     <button class="primary" id="addBtn">Add a price</button>
   </div>
   <div class="banner" id="banner" hidden></div>
   <ol class="board" id="board"></ol>
+  <div id="mapBox" hidden>
+    <div id="map" role="region" aria-label="Map of bars"></div>
+    <div class="note" id="mapNote"></div>
+  </div>
   <footer>
     <div id="stats"></div>
     <div id="foot"></div>
-    <div>Ranked per half litre. An imperial is about 20 cl and a caneca 40–50 cl. Prices marked “est.” are unchecked estimates until someone reports a real price. Each person's latest report counts once. The shown price is the median of the three most recent reports from the last six months. Created by <a href="https://an-timnguyen.github.io//">Fraiche Design</a>.</div>
+    <div>Ranked per half litre. An imperial is about 20 cl. Prices marked “est.” are unchecked estimates until someone reports a real price. Each person's latest report counts once. The shown price is the median of the three most recent reports from the last six months. Created by <a href="https://an-timnguyen.github.io//">Fraiche Design</a>.</div>
     <div id="modBar"><button id="modBtn" type="button">Moderator sign-in</button></div>
   </footer>
 </div>
@@ -48,10 +55,11 @@
     <div id="newV" hidden style="display:grid;gap:12px">
       <label>Bar name<input type="text" id="fName" maxlength="80" autocomplete="off"></label>
       <div class="two"><label>Area<select id="fArea"></select></label><label>Kind<select id="fKind"></select></label></div>
+      <label style="display:flex;gap:10px;align-items:center;color:var(--ink)"><input type="checkbox" id="fLoc" style="width:20px;height:20px"> I'm at this bar, add it to the map</label>
+      <div class="note" id="fLocMsg"></div>
     </div>
-    <div class="two">
-      <label>Serve<select id="fSize"></select></label>
-      <label>Price (€)<input type="number" id="fEur" min="0.3" max="40" step="0.05" inputmode="decimal" placeholder="2.00"></label>
+    <div>
+      <label>Price of an imperial, 20 cl (€)<input type="number" id="fEur" min="0.3" max="40" step="0.05" inputmode="decimal" placeholder="2.00"></label>
     </div>
     <label>Beer<select id="fBeer"><option>Super Bock</option><option>Sagres</option><option>Craft</option><option>Other</option></select></label>
     <fieldset>

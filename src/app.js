@@ -1,8 +1,12 @@
 // Imperial: UI and price logic. Data access lives in store.js.
 import { start, writeMine, writeMod, moderatorSignIn, moderatorSignOut } from "./store.js";
+import { drawMap, closeMapPopup } from "./map.js";
 const AREAS=["Baixa & Rossio","Chiado","Bairro Alto","Cais do Sodré","Príncipe Real","Alfama","Graça","Mouraria & Intendente","Arroios","Penha de França","Marvila","Santos & Alcântara","Belém","Campo de Ourique","Avenidas Novas","Outra Banda"];
 const KINDS=["Tasca / café","Bar","Craft beer","Rooftop","Quiosque"];
-const SIZES=[[20,"Imperial · 20 cl"],[25,"Mini bottle · 25 cl"],[33,"Bottle · 33 cl"],[40,"Caneca · 40 cl"],[50,"Caneca · 50 cl"],[57,"Pint · 57 cl"]];
+// Reports are imperials only. Older reports at other sizes still count and show as "33 cl" etc.
+const SIZES=[[20,"Imperial · 20 cl"]],SERVE=20;
+// Map view (src/map.js) is built but not launched yet. Set to true to show the List/Map toggle and the "I'm at this bar" location checkbox.
+const MAP_ON=false;
 const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const FRESH=180*864e5, MAX_ITEMS=300, MIN_PER=0.75, MAX_PER=25, COOLDOWN=10*60e3;
 const $=id=>document.getElementById(id);
@@ -12,15 +16,17 @@ const sizeName=cl=>(SIZES.find(s=>s[0]===cl)||[cl,cl+" cl"])[1];
 const per=p=>p.eur/p.cl*50;
 const okP=p=>p&&typeof p.eur==="number"&&p.eur>0&&typeof p.cl==="number"&&p.cl>0;
 const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim();
+// a location counts if it's inside greater Lisbon (incl. Outra Banda)
+const okLoc=l=>l&&typeof l.lat==="number"&&typeof l.lng==="number"&&l.lat>38.55&&l.lat<38.85&&l.lng>-9.4&&l.lng<-8.95;
 const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 
 /* Data lives in Firestore; see store.js for the layout. */
 let seedVenues=[],userDocs=new Map(),mod={hiddenReports:[],hiddenUsers:[],hiddenVenues:[]};
 let venues=[],reports=[];
 let uid=null,canWrite=null,isOwner=false,connected=false;
-let st={sort:"cheap",area:"",q:"",hh:false,open:null};
-try{const s=JSON.parse(localStorage.getItem("imperial-ui")||"{}");Object.assign(st,{sort:s.sort||"cheap",area:s.area||"",hh:!!s.hh})}catch(e){}
-const saveUi=()=>{try{localStorage.setItem("imperial-ui",JSON.stringify({sort:st.sort,area:st.area,hh:st.hh}))}catch(e){}};
+let st={sort:"cheap",area:"",q:"",hh:false,open:null,view:"list"};
+try{const s=JSON.parse(localStorage.getItem("imperial-ui")||"{}");Object.assign(st,{sort:s.sort||"cheap",area:s.area||"",hh:!!s.hh,view:MAP_ON&&s.view==="map"?"map":"list"})}catch(e){}
+const saveUi=()=>{try{localStorage.setItem("imperial-ui",JSON.stringify({sort:st.sort,area:st.area,hh:st.hh,view:st.view}))}catch(e){}};
 
 function lisbonNow(){const p={};for(const x of new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Lisbon",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date()))p[x.type]=x.value;return{day:DAYS.indexOf(p.weekday)+1,hm:p.hour+":"+p.minute}}
 function hhActive(h){if(!h||!Array.isArray(h.days))return false;const n=lisbonNow();return h.days.includes(n.day)&&n.hm>=h.from&&n.hm<h.to}
@@ -35,7 +41,7 @@ function rebuild(){
   const addV=(v,by)=>{if(typeof v.name!=="string"||!v.name.trim()||!AREAS.includes(v.area)||hv.has(v.id))return;
     const k=norm(v.name)+"|"+v.area;
     if(byKey.has(k)){alias.set(v.id,byKey.get(k));return}
-    byKey.set(k,v.id);venues.push({id:v.id,name:v.name.trim().slice(0,80),area:v.area,kind:KINDS.includes(v.kind)?v.kind:"Bar",beer:v.beer,est:v.est,by,at:v.at||0})};
+    byKey.set(k,v.id);venues.push({id:v.id,name:v.name.trim().slice(0,80),area:v.area,kind:KINDS.includes(v.kind)?v.kind:"Bar",beer:v.beer,est:v.est,loc:okLoc(v.loc)?{lat:v.loc.lat,lng:v.loc.lng}:null,by,at:v.at||0})};
   seedVenues.forEach(v=>addV(v,null));
   const users=[...userDocs.entries()].filter(([u])=>!hu.has(u));
   users.flatMap(([u,d])=>arr(d.venues).map(v=>[u,v])).sort((a,b)=>(a[1].at||0)-(b[1].at||0)).forEach(([u,v])=>addV(v,u));
@@ -104,9 +110,26 @@ function render(){
       ${regLine?`<div>${regLine}</div>`:""}
       ${v.hhp?`<div>Happy hour ${esc(dayText(v.hhp.days))} ${esc(v.hhp.from)}–${esc(v.hhp.to)}: ${esc(eur(v.hhp.eur))} for ${esc(sizeName(v.hhp.cl))}.</div>`:""}
       ${hist?`<ul>${hist}</ul>`:""}
-      <div class="acts">${v.reg&&!v.reg.est&&canWrite!==false?`<button data-confirm="${esc(v.id)}">Still ${esc(eur(v.reg.eur))}</button> · `:""}<button data-report="${esc(v.id)}">${v.reg&&!v.reg.est?"Different price":"Report the price"}</button>${isOwner?` · <button class="mini" data-hidev="${esc(v.id)}">Hide bar</button>`:""}</div>
+      <div class="acts">${v.reg&&!v.reg.est&&v.reg.cl===SERVE&&canWrite!==false?`<button data-confirm="${esc(v.id)}">Still ${esc(eur(v.reg.eur))}</button> · `:""}<button data-report="${esc(v.id)}">${v.reg&&!v.reg.est?"Different price":"Report the price"}</button>${isOwner?` · <button class="mini" data-hidev="${esc(v.id)}">Hide bar</button>`:""}</div>
     </div>`:""}</li>`}).join("");
   $("foot").textContent=m.length?`Lisbon time ${lisbonNow().hm}.`:"";
+  renderMap(m);
+}
+function renderMap(m){
+  const onMap=st.view==="map";
+  $("vList").setAttribute("aria-pressed",!onMap);$("vMap").setAttribute("aria-pressed",onMap);
+  $("board").hidden=onMap;$("mapBox").hidden=!onMap;
+  ["sCheap","sDear","sNew"].forEach(id=>$(id).parentElement.hidden=onMap);
+  if(!onMap)return;
+  const pinned=m.filter(v=>v.loc),cheapest=pinned.length?Math.min(...pinned.map(v=>per(v.use))):null;
+  const missing=m.length-pinned.length;
+  $("mapNote").textContent=!m.length?$("board").textContent:missing?`${missing} bar${missing>1?"s aren't":" isn't"} on the map yet, because nobody has added ${missing>1?"their locations":"its location"}. Switch to List to see ${missing>1?"them":"it"}.`:"";
+  const items=pinned.map(v=>{const u=v.use;return{id:v.id,lat:v.loc.lat,lng:v.loc.lng,title:v.name,label:esc(eur(u.eur)),hot:v.live||per(u)===cheapest,
+    html:`<div class="pop"><b>${esc(v.name)}</b><br><span class="price">${esc(eur(u.eur))}</span> <span class="per">${esc(sizeName(u.cl))} · ${esc(eur(per(u)))}/0,5 L</span>
+      <br><span class="meta">${esc(v.area)} · ${esc(v.kind||"Bar")}${u.est?" · est.":""}${u.old?" · old":""}</span>
+      ${v.hhp?`<br><span class="tag hh" style="margin:0">Happy hour ${esc(dayText(v.hhp.days))} ${esc(v.hhp.from)}–${esc(v.hhp.to)}: ${esc(eur(v.hhp.eur))}</span>`:""}
+      <div class="acts"><button data-report="${esc(v.id)}">Report the price</button> · <button data-show="${esc(v.id)}">Details</button></div></div>`}});
+  drawMap($("map"),items,[st.area,norm(st.q),st.hh].join("|")).catch(e=>{console.error(e);$("mapNote").textContent="The map couldn't load. Check your connection, or switch to List."});
 }
 function say(t,ms){const b=$("banner");b.hidden=false;b.textContent=t;clearTimeout(say.t);if(ms)say.t=setTimeout(()=>b.hidden=true,ms)}
 
@@ -122,6 +145,13 @@ function recentMine(vid){const d=userDocs.get(uid);return arr(d&&d.items).find(r
 // events
 $("q").addEventListener("input",e=>{st.q=e.target.value;render()});
 $("sCheap").onclick=()=>{st.sort="cheap";saveUi();render()};$("sDear").onclick=()=>{st.sort="dear";saveUi();render()};$("sNew").onclick=()=>{st.sort="new";saveUi();render()};
+if(!MAP_ON){$("vList").parentElement.hidden=true;$("fLoc").closest("label").hidden=true}
+$("vList").onclick=()=>{st.view="list";saveUi();render()};$("vMap").onclick=()=>{st.view="map";saveUi();render()};
+$("mapBox").addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.report){closeMapPopup();openForm(t.dataset.report)}
+  if(t.dataset.show){closeMapPopup();st.view="list";st.open=t.dataset.show;saveUi();render();
+    document.querySelector(`[data-open="${CSS.escape(t.dataset.show)}"]`)?.scrollIntoView({block:"center"})}
+});
 $("hhNow").onclick=()=>{st.hh=!st.hh;saveUi();render()};
 $("area").addEventListener("change",e=>{st.area=e.target.value;saveUi();render()});
 $("board").addEventListener("click",async e=>{
@@ -144,11 +174,20 @@ setInterval(render,60000);
 // form
 $("fArea").innerHTML=AREAS.map(a=>`<option>${esc(a)}</option>`).join("");
 $("fKind").innerHTML=KINDS.map(a=>`<option>${esc(a)}</option>`).join("");
-$("fSize").innerHTML=SIZES.map(([c,l])=>`<option value="${c}">${esc(l)}</option>`).join("");
 let days=[1,2,3,4,5];
 const drawDays=()=>$("fDays").innerHTML=DAYS.map((d,i)=>`<button type="button" data-d="${i+1}" aria-pressed="${days.includes(i+1)}">${d}</button>`).join("");
 $("fDays").addEventListener("click",e=>{const b=e.target.closest("[data-d]");if(!b)return;const d=+b.dataset.d;days=days.includes(d)?days.filter(x=>x!==d):[...days,d];drawDays()});
 $("fHH").onchange=()=>{$("hhBox").hidden=!$("fHH").checked};
+let here=null;
+$("fLoc").onchange=()=>{here=null;const msg=$("fLocMsg");msg.textContent="";if(!$("fLoc").checked)return;
+  if(!navigator.geolocation){msg.textContent="This browser can't share your location.";$("fLoc").checked=false;return}
+  msg.textContent="Finding you…";
+  navigator.geolocation.getCurrentPosition(p=>{if(!$("fLoc").checked)return;const l={lat:+p.coords.latitude.toFixed(6),lng:+p.coords.longitude.toFixed(6)};
+    if(!okLoc(l)){msg.textContent="You don't seem to be in Lisbon, so the bar won't go on the map.";$("fLoc").checked=false;return}
+    here=l;msg.textContent=`Got it, accurate to about ${Math.round(p.coords.accuracy)} m.`},
+    ()=>{msg.textContent="Couldn't get your location. The bar will be saved without one.";$("fLoc").checked=false},
+    {enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+};
 $("fVenue").onchange=()=>{const n=$("fVenue").value==="__new";$("newV").hidden=!n;$("newV").style.display=n?"grid":"none"};
 function ready(){
   if(!uid){say("Still connecting. Try again in a second.",3000);return false}
@@ -159,20 +198,21 @@ function openForm(vid){
   const vs=[...venues].sort((a,b)=>a.name.localeCompare(b.name,"pt"));
   $("fVenue").innerHTML=`<option value="__new">+ A bar that isn't listed</option>`+vs.map(v=>`<option value="${esc(v.id)}">${esc(v.name)} · ${esc(v.area)}</option>`).join("");
   $("fVenue").value=vid||(vs[0]?vs[0].id:"__new");$("fVenue").onchange();
-  const v=model().find(x=>x.id===vid);if(v&&v.reg){$("fSize").value=String(v.reg.cl);if(v.reg.beer)$("fBeer").value=v.reg.beer}
-  $("fEur").value="";$("fName").value="";$("fHH").checked=false;$("hhBox").hidden=true;$("fErr").textContent="";days=[1,2,3,4,5];drawDays();
+  const v=model().find(x=>x.id===vid);if(v&&v.reg){if(v.reg.beer)$("fBeer").value=v.reg.beer}
+  $("fEur").value="";$("fName").value="";$("fLoc").checked=false;here=null;$("fLocMsg").textContent="";$("fHH").checked=false;$("hhBox").hidden=true;$("fErr").textContent="";days=[1,2,3,4,5];drawDays();
   $("dlg").showModal();setTimeout(()=>$("fEur").focus(),30);
 }
 $("addBtn").onclick=()=>openForm(st.open);
 $("fCancel").onclick=()=>$("dlg").close();
 $("f").addEventListener("submit",async e=>{
   e.preventDefault();const err=$("fErr");err.textContent="";
-  const price=Math.round(parseFloat(String($("fEur").value).replace(",","."))*100)/100;const cl=+$("fSize").value;
+  const price=Math.round(parseFloat(String($("fEur").value).replace(",","."))*100)/100;const cl=SERVE;
   if(!(price>0)){err.textContent="Enter the price you paid.";return}
   const p=price/cl*50;
-  if(p<MIN_PER||p>MAX_PER){err.textContent=`That works out to ${eur(p)} per half litre, which looks off. Check the price and the serve size.`;return}
+  if(p<MIN_PER||p>MAX_PER){err.textContent=`That works out to ${eur(p)} per half litre, which looks off. Check it's the price of one imperial.`;return}
   let vid=$("fVenue").value;const isNew=vid==="__new";const name=$("fName").value.trim().replace(/\s+/g," ");
   if(isNew&&name.length<2){err.textContent="Give the bar a name.";return}
+  if(isNew&&$("fLoc").checked&&!here){err.textContent="Still finding your location. Try again in a second, or untick the box.";return}
   if(isNew){const dup=venues.find(v=>norm(v.name)===norm(name)&&v.area===$("fArea").value);if(dup){vid=dup.id}}
   const hh=$("fHH").checked;
   if(hh&&(!days.length||!($("fFrom").value<$("fTo").value))){err.textContent="Pick the happy-hour days, and a start time before the end time.";return}
@@ -182,7 +222,7 @@ $("f").addEventListener("submit",async e=>{
     const now=Date.now(),beer=$("fBeer").value;let newId=null;
     if(isNew&&vid==="__new"){newId="u-"+rid();vid=newId}
     await writeMine(n=>{
-      if(newId)n.venues.push({id:newId,name:name.slice(0,80),area:$("fArea").value,kind:$("fKind").value,beer,at:now});
+      if(newId)n.venues.push({id:newId,name:name.slice(0,80),area:$("fArea").value,kind:$("fKind").value,beer,...(here?{loc:here}:{}),at:now});
       const r={id:rid(),venue:vid,eur:price,cl,beer,hh,at:now};
       if(hh)Object.assign(r,{days:[...days].sort((a,b)=>a-b),from:$("fFrom").value,to:$("fTo").value});
       n.items.push(r);

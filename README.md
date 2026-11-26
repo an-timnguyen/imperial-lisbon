@@ -19,6 +19,7 @@ A static site (plain HTML, CSS and ES modules, no build step) backed by Firebase
 index.html          markup
 src/style.css       styles (light and dark)
 src/app.js          UI and price logic
+src/map.js          map view (Leaflet + CARTO tiles, loaded on demand)
 src/store.js        Firebase auth + Firestore reads/writes
 src/config.js       your Firebase web config  ← edit this
 firestore.rules     security rules
