@@ -2,7 +2,7 @@
   "firestore": { "rules": "firestore.rules" },
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "firestore.rules", "**/.*", "**/node_modules/**", "scripts/**", "data/**", "README.md", "package*.json", "service-account*.json"],
+    "ignore": ["firebase.json", "firestore.rules", "**/.*", "**/.*/**", "CLAUDE.md", "**/node_modules/**", "scripts/**", "data/**", "README.md", "package*.json", "service-account*.json"],
     "headers": [{ "source": "**/*.@(js|css)", "headers": [{ "key": "Cache-Control", "value": "max-age=300" }] }]
   }
 }
