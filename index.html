@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Imperial · Lisbon beer prices</title>
+<meta name="description" content="Crowd-sourced beer prices in Lisbon, ranked per half litre.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Imperial</h1>
+    <p class="sub0">Beer prices in Lisbon, reported by the people drinking them.</p>
+  </header>
+  <section class="now" aria-live="polite">
+    <div class="lbl">Cheapest right now</div>
+    <div class="big" id="nowPrice">…</div>
+    <div class="where" id="nowWhere">Loading prices</div>
+    <div class="sub" id="nowSub"></div>
+  </section>
+  <div class="controls">
+    <input type="search" id="q" placeholder="Search" aria-label="Search">
+    <select id="area" aria-label="Area"></select>
+    <div class="seg" role="group" aria-label="Sort">
+      <button id="sCheap" aria-pressed="true">Cheapest</button><button id="sDear" aria-pressed="false">Priciest</button><button id="sNew" aria-pressed="false">Newest</button>
+    </div>
+    <button id="hhNow" aria-pressed="false">Happy hour now</button>
+    <button class="primary" id="addBtn">Add a price</button>
+  </div>
+  <div class="banner" id="banner" hidden></div>
+  <ol class="board" id="board"></ol>
+  <footer>
+    <div id="stats"></div>
+    <div id="foot"></div>
+    <div>Ranked per half litre. An imperial is about 20 cl and a caneca 40–50 cl. Prices marked “est.” are unchecked estimates until someone reports a real price. Each person's latest report counts once. The shown price is the median of the three most recent reports from the last six months. Inspired by <a href="https://www.pilsguiden.no/">Pilsguiden</a>.</div>
+    <div id="modBar"><button id="modBtn" type="button">Moderator sign-in</button></div>
+  </footer>
+</div>
+
+<dialog id="dlg">
+  <form id="f" novalidate>
+    <h2>Add a price</h2>
+    <label>Bar<select id="fVenue"></select></label>
+    <div id="newV" hidden style="display:grid;gap:12px">
+      <label>Bar name<input type="text" id="fName" maxlength="80" autocomplete="off"></label>
+      <div class="two"><label>Area<select id="fArea"></select></label><label>Kind<select id="fKind"></select></label></div>
+    </div>
+    <div class="two">
+      <label>Serve<select id="fSize"></select></label>
+      <label>Price (€)<input type="number" id="fEur" min="0.3" max="40" step="0.05" inputmode="decimal" placeholder="2.00"></label>
+    </div>
+    <label>Beer<select id="fBeer"><option>Super Bock</option><option>Sagres</option><option>Craft</option><option>Other</option></select></label>
+    <fieldset>
+      <label style="display:flex;gap:10px;align-items:center;color:var(--ink)"><input type="checkbox" id="fHH" style="width:20px;height:20px"> Happy-hour price</label>
+      <div id="hhBox" hidden style="display:grid;gap:10px">
+        <div class="days" id="fDays"></div>
+        <div class="two"><label>From<input type="time" id="fFrom" value="17:00"></label><label>To<input type="time" id="fTo" value="19:00"></label></div>
+      </div>
+    </fieldset>
+    <div class="err" id="fErr" role="alert"></div>
+    <div class="formacts"><button type="button" id="fCancel">Cancel</button><button type="submit" class="primary" id="fSave">Save</button></div>
+  </form>
+</dialog>
+
+<script type="module" src="src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[
+  {"id":"casa-das-bifanas","name":"Casa das Bifanas","area":"Baixa & Rossio","kind":"Tasca / café","beer":"Super Bock","est":{"eur":1.8,"cl":20}},
+  {"id":"quiosque-ribeira-das-naus","name":"Quiosque Ribeira das Naus","area":"Cais do Sodré","kind":"Quiosque","beer":"Sagres","est":{"eur":2,"cl":20}},
+  {"id":"quiosque-sao-pedro-alcantara","name":"Quiosque Miradouro de São Pedro de Alcântara","area":"Bairro Alto","kind":"Quiosque","beer":"Super Bock","est":{"eur":2.5,"cl":20}},
+  {"id":"simos-quiosque","name":"Simo's Quiosque","area":"Penha de França","kind":"Quiosque","beer":"Super Bock","est":{"eur":1.8,"cl":20}},
+  {"id":"a-capela","name":"A Capela","area":"Bairro Alto","kind":"Bar","beer":"Super Bock","est":{"eur":2.5,"cl":20}},
+  {"id":"maria-caxuxa","name":"Maria Caxuxa","area":"Bairro Alto","kind":"Bar","beer":"Sagres","est":{"eur":2.5,"cl":20}},
+  {"id":"park-bar","name":"Park","area":"Bairro Alto","kind":"Rooftop","beer":"Super Bock","est":{"eur":3.5,"cl":20}},
+  {"id":"pavilhao-chines","name":"Pavilhão Chinês","area":"Príncipe Real","kind":"Bar","beer":"Sagres","est":{"eur":4,"cl":20}},
+  {"id":"pensao-amor","name":"Pensão Amor","area":"Cais do Sodré","kind":"Bar","beer":"Super Bock","est":{"eur":3.5,"cl":20}},
+  {"id":"java-rooftop","name":"Java Rooftop","area":"Cais do Sodré","kind":"Rooftop","beer":"Sagres","est":{"eur":4,"cl":20}},
+  {"id":"duque-brewpub","name":"Duque Brewpub","area":"Chiado","kind":"Craft beer","beer":"Craft","est":{"eur":6,"cl":40}},
+  {"id":"the-beer-station","name":"The Beer Station","area":"Baixa & Rossio","kind":"Craft beer","beer":"Craft","est":{"eur":5.5,"cl":40}},
+  {"id":"cerveteca-lisboa","name":"Cerveteca Lisboa","area":"Príncipe Real","kind":"Craft beer","beer":"Craft","est":{"eur":6,"cl":40}},
+  {"id":"dois-corvos-taproom","name":"Dois Corvos Taproom","area":"Marvila","kind":"Craft beer","beer":"Craft","est":{"eur":5.5,"cl":40}},
+  {"id":"fabrica-musa","name":"Fábrica Musa","area":"Marvila","kind":"Craft beer","beer":"Craft","est":{"eur":5,"cl":40}},
+  {"id":"crafty-corner","name":"Crafty Corner","area":"Alfama","kind":"Craft beer","beer":"Craft","est":{"eur":5.5,"cl":40}},
+  {"id":"outro-lado","name":"Outro Lado","area":"Alfama","kind":"Craft beer","beer":"Craft","est":{"eur":5,"cl":40}},
+  {"id":"flor-de-lupulo","name":"Flor de Lúpulo","area":"Arroios","kind":"Craft beer","beer":"Craft","est":{"eur":5,"cl":40}},
+  {"id":"sputnik-craft","name":"Sputnik Craft Beer Bar","area":"Mouraria & Intendente","kind":"Craft beer","beer":"Craft","est":{"eur":5,"cl":40}},
+  {"id":"quimera-brewpub","name":"Quimera Brewpub","area":"Santos & Alcântara","kind":"Craft beer","beer":"Craft","est":{"eur":5,"cl":40}}
+]

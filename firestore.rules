@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Starting bar list: everyone reads, only moderators write (or the seed script, which bypasses rules).
+    match /venues/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Moderation lists: everyone reads (the app filters with them), only moderators write.
+    match /mod/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Moderator list: add documents by hand in the Firebase console.
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // One doc per person. Only that person writes it; moderators may delete it.
+    match /reports/{uid} {
+      allow read: if true;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['items', 'venues', 'updatedAt'])
+        && request.resource.data.items is list
+        && request.resource.data.items.size() <= 300
+        && request.resource.data.venues is list
+        && request.resource.data.venues.size() <= 50;
+      allow delete: if signedIn() && (request.auth.uid == uid || isAdmin());
+    }
+  }
+}

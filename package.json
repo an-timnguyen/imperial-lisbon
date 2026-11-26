@@ -1,0 +1,15 @@
+{
+  "name": "imperial-lisbon",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Crowd-sourced beer prices in Lisbon, ranked per half litre.",
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes serve -l 5173 .",
+    "seed": "node scripts/seed.mjs",
+    "deploy": "npx --yes firebase-tools deploy --only hosting,firestore:rules"
+  },
+  "devDependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}
