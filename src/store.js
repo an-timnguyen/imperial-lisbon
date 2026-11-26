@@ -12,12 +12,19 @@ import {
 import {
   getFirestore, collection, doc, onSnapshot, getDoc, runTransaction, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import { firebaseConfig } from "./config.js";
+import { firebaseConfig, recaptchaSiteKey } from "./config.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app-check.js";
+
 
 const MAX_ITEMS = 300;
 const arr = (x) => (Array.isArray(x) ? x : []);
 
 const app = initializeApp(firebaseConfig);
+if (location.hostname === "localhost") self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+initializeAppCheck(app, {
+  provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
+  isTokenAutoRefreshEnabled: true,
+});
 const auth = getAuth(app);
 const db = getFirestore(app);
 
